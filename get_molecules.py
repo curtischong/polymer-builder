@@ -1,7 +1,10 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem
 import numpy as np
+from ase import Atoms
+from ase.optimize import BFGS
 
+max_steps = 2
 
 # NOTE: this will work poortly for hydrogenated molecules
 def calculate_displacement_vector(conf, idx_of_last_atom: int):
@@ -107,6 +110,61 @@ def get_molecules(smiles: str):
     return atomic_nums, rotated_coords
 
 
+from sevenn.sevennet_calculator import SevenNetCalculator
+sevennet_0_cal = SevenNetCalculator("7net-0")  # 7net-0, SevenNet-0, 7net-0_22May2024, 7net-0_11July2024 ...
+
+properties = ["energy", "forces", "stress"]
+
+def to_ase_atoms(atomic_nums: np.ndarray, coords: np.ndarray):
+    lattice_matrix = np.array([
+        [-1000, 1000, 1000],
+        [1000, -1000, 1000],
+        [1000, 1000, -1000]
+    ])
+    atoms = Atoms(
+        numbers=atomic_nums,
+        positions=coords,
+        cell=lattice_matrix,
+        pbc=(False, False, False),
+    )
+    return atoms
+
+class LoggingBFGS(BFGS):
+    def __init__(self, atoms, logfile=None, trajectory=None, coords_log=[]):
+        super().__init__(atoms, logfile, trajectory)
+        self.coords_log = coords_log
+        self.steps_taken = 0
+
+    def log(self):
+        super().log()
+        print("step: ", len(self.coords_log))
+        # Log the fractional positions at each step
+        self.coords_log.append(
+            self.atoms.get_positions().copy().tolist()
+        )
+
+    def step(self, f=None):
+        if self.steps_taken >= max_steps:
+            return
+        super().step(f)
+        self.steps_taken += 1
+
+
+def relax(atomic_nums: np.ndarray, coords: np.ndarray):
+    # set initial positions
+    system = to_ase_atoms(atomic_nums=atomic_nums, coords=coords)
+
+    # create the calculator
+    system.calc = sevennet_0_cal
+
+    # dyn = BFGS(system)
+    coords_log = []
+    dyn = LoggingBFGS(system, coords_log=coords_log)
+    while not dyn.steps_taken >= max_steps:
+        dyn.run(steps=1)
+
+    return coords_log
+
 
 def grow_two_molecules(smiles: str):
     mol1_atomic_nums, mol1_coords = get_molecules(smiles)
@@ -123,3 +181,6 @@ def grow_two_molecules(smiles: str):
 
     atomic_nums = np.concatenate((mol1_atomic_nums, mol2_atomic_nums))
     coords = np.concatenate((mol1_coords, mol2_coords))
+
+    coords_log = relax(atomic_nums, coords)
+    print(coords_log)
