@@ -108,7 +108,18 @@ def get_molecules(smiles: str):
 
 
 
-
 def grow_two_molecules(smiles: str):
-    mol1 = get_molecules(smiles)
-    mol2 = get_molecules(smiles)
+    mol1_atomic_nums, mol1_coords = get_molecules(smiles)
+    mol2_atomic_nums, mol2_coords = get_molecules(smiles)
+
+    furthest_point_of_mol1 = np.max(mol1_coords, axis=0)
+
+    buffer = 3
+    # translate the second molecule to the furthest point of the first molecule
+    for i in range(len(mol2_coords)):
+        mol2_coords[i] = mol2_coords[i] + furthest_point_of_mol1 + buffer
+
+    # now we have two molecules near each other. run md to get them to attach
+
+    atomic_nums = np.concatenate((mol1_atomic_nums, mol2_atomic_nums))
+    coords = np.concatenate((mol1_coords, mol2_coords))
