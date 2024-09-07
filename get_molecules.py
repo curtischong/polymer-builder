@@ -17,19 +17,3 @@ def get_molecules(smiles: str):
         coords.append([pos.x, pos.y, pos.z])
 
     return atomic_nums, coords
-
-
-
-def view_molecule(mol, width=800, height=600, style=None, surface=None):
-    """
-    Generate an interactive 3D viewer for an RDKit molecule.
-    """
-    pdb = Chem.MolToPDBBlock(mol)
-    viewer = py3Dmol.view(width=width, height=height)
-    viewer.addModel(pdb, "pdb")
-    if style is None:
-        style = {"stick": {"radius": 0.15}, "sphere": {"radius": 0.3}}
-    viewer.setStyle(style)
-    if surface:
-        viewer.addSurface(py3Dmol.VDW, surface)
-    viewer.zoomTo()
