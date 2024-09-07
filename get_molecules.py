@@ -3,6 +3,8 @@ from rdkit.Chem import AllChem
 import numpy as np
 from ase import Atoms
 from ase.optimize import BFGS
+import sevenn_runner
+from sevenn.sevennet_calculator import SevenNetCalculator
 
 max_steps = 2
 
@@ -110,11 +112,6 @@ def get_molecules(smiles: str):
     return atomic_nums, rotated_coords
 
 
-from sevenn.sevennet_calculator import SevenNetCalculator
-sevennet_0_cal = SevenNetCalculator("7net-0")  # 7net-0, SevenNet-0, 7net-0_22May2024, 7net-0_11July2024 ...
-
-properties = ["energy", "forces", "stress"]
-
 def to_ase_atoms(atomic_nums: np.ndarray, coords: np.ndarray):
     lattice_matrix = np.array([
         [-1000, 1000, 1000],
@@ -151,6 +148,10 @@ class LoggingBFGS(BFGS):
 
 
 def relax(atomic_nums: np.ndarray, coords: np.ndarray):
+    sevennet_0_cal = SevenNetCalculator("7net-0")  # 7net-0, SevenNet-0, 7net-0_22May2024, 7net-0_11July2024 ...
+
+    properties = ["energy", "forces", "stress"]
+
     # set initial positions
     system = to_ase_atoms(atomic_nums=atomic_nums, coords=coords)
 
