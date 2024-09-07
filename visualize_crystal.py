@@ -58,32 +58,42 @@ def plot_crystal(
 ) -> go.Figure:
     # we use min(z, 118) since the mask state needs a visualization
     element_symbols = [Element.from_Z(min(z, 118)).symbol for z in atomic_numbers]
-    pos_arr = []
-    for i in range(len(atomic_numbers)):
-        pos_arr.append(coords[i])
-
+    # print(element_symbols)
+    pos_arr = coords
     # Create a Plotly figure
     fig = go.Figure()
 
-    # Add traces for each atom in the structure
-    for i in range(len(pos_arr)):
-        coord = pos_arr[i]
-        atomic_num = atomic_numbers[i]
-        fig.add_trace(
-            go.Scatter3d(
-                x=[coord[0]],
-                y=[coord[1]],
-                z=[coord[2]],
-                mode="markers",
-                marker=dict(
-                    size=5,
-                    color=element_color(
-                        atomic_num
-                    ),  # Set the color based on the atom type
-                ),
-                name=element_symbols[i],
-            )
-        )
+    fig.add_trace(go.Scatter3d(
+        x=list(map(lambda x : x[0], pos_arr)),
+        y=list(map(lambda x : x[1], pos_arr)),
+        z=list(map(lambda x : x[2], pos_arr)),
+        mode='markers',
+        marker=dict(size=5,
+            color=list(map(element_color, atomic_numbers)),  # Set the color based on the atom type
+        ),
+        text=element_symbols,
+        hoverinfo='text+x+y+z',
+    ))
+
+    # # Add traces for each atom in the structure
+    # for i in range(len(pos_arr)):
+    #     coord = pos_arr[i]
+    #     atomic_num = atomic_numbers[i]
+    #     fig.add_trace(
+    #         go.Scatter3d(
+    #             x=[coord[0]],
+    #             y=[coord[1]],
+    #             z=[coord[2]],
+    #             mode="markers",
+    #             marker=dict(
+    #                 size=5,
+    #                 color=element_color(
+    #                     atomic_num
+    #                 ),  # Set the color based on the atom type
+    #             ),
+    #             name=element_symbols[i],
+    #         )
+    #     )
 
     # Set the layout for the 3D plot
     fig.update_layout(
