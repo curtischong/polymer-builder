@@ -220,7 +220,7 @@ def relax(sevennet_0_cal: SevenNetCalculator, atomic_nums: np.ndarray, coords: n
     return coords_log
 
 
-def position_mol2_on_bonding_site(mol1_atomic_nums: np.ndarray, mol1_coords: np.ndarray, mol1_last_non_hydrogen_idx_on_main_chain: int,  mol2_atomic_nums: np.ndarray, mol2_coords: np.ndarray, mol2_last_non_hydrogen_idx_on_main_chain: int):
+def position_mol2_on_bonding_site(mol1_atomic_nums: np.ndarray, mol1_coords: np.ndarray, mol1_last_non_hydrogen_idx_on_main_chain: int, mol2_atomic_nums: np.ndarray, mol2_coords: np.ndarray, mol2_last_non_hydrogen_idx_on_main_chain: int):
     mol1_non_hydrogen_idx = mol1_last_non_hydrogen_idx_on_main_chain
     mol2_non_hydrogen_idx = 0
 
@@ -245,7 +245,7 @@ def position_mol2_on_bonding_site(mol1_atomic_nums: np.ndarray, mol1_coords: np.
     coords = np.concatenate((mol1_coords, mol2_coords))
     return atomic_nums, coords, len(mol1_coords) + mol2_last_non_hydrogen_idx_on_main_chain
 
-def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str, initial_coords: np.ndarray = None, old_atomic_nums:Optional[np.ndarray]=None, coords_log:Optional[list[np.ndarray]]=None) -> tuple[np.ndarray, list[np.ndarray], int]:
+def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str, initial_coords: np.ndarray = None, old_atomic_nums:Optional[np.ndarray]=None, old_coords_log:Optional[list[np.ndarray]]=None) -> tuple[np.ndarray, list[np.ndarray], int]:
     mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
     mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
 
@@ -257,12 +257,12 @@ def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str, initial_
 
     atomic_nums = None
     coords = None
-    if old_atomic_nums is None:
+    if old_atomic_nums is None and old_coords_log is None:
         atomic_nums = new_atomic_nums
         coords = new_coords
     else:
         atomic_nums = np.concatenate((old_atomic_nums, new_atomic_nums))
-        coords = np.concatenate((coords_log[-1], new_coords))
+        coords = np.concatenate((old_coords_log[-1], new_coords))
 
 
     coords_log = relax(sevennet_0_cal, atomic_nums, coords, max_steps=5)

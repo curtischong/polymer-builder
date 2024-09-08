@@ -76,7 +76,7 @@ def create_bulk_polymer():
         })
 
         num_monomers = 5
-        for i in range(num_monomers - 2): # -2 since we already have the first 2 monomers
+        for _ in range(num_monomers - 2): # -2 since we already have the first 2 monomers
             atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain = get_molecules.grow_on_chain(sevennet_0_cal, relax_batches[-1]["atomic_nums"], coords_log, last_non_hydrogen_idx_on_main_chain, smiles)
             relax_batches.append({
                 "atomic_nums": atomic_nums.tolist(),

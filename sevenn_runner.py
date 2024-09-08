@@ -151,7 +151,7 @@ class SevenNetCalculator(Calculator):
                 .reshape(len(atoms))
                 .numpy()
             ),
-            'forces': output[KEY.PRED_FORCE].detach().cpu().numpy(),
+            'forces': np.clip(output[KEY.PRED_FORCE].detach().cpu().numpy(), a_min=None, a_max=50),
             'stress': np.array(
                 (-output[KEY.PRED_STRESS])
                 .detach()
