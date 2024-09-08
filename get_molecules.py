@@ -92,7 +92,7 @@ def translate_molecule(mol, x=0, y=0, z=0):
     
     return mol
 
-def rotate_coordinates_3d(coords, rotation_matrix):
+def rotate_coordinates_3d(coords: np.ndarray, rotation_matrix: np.ndarray) -> np.ndarray:
     """
     Rotate an array of 3D coordinates using a given 3x3 rotation matrix.
     
@@ -102,7 +102,7 @@ def rotate_coordinates_3d(coords, rotation_matrix):
     """
     return np.dot(coords, rotation_matrix.T)
 
-def get_molecules(smiles: str):
+def get_molecules(smiles: str) -> tuple[np.ndarray, np.ndarray, int]:
     mol = Chem.MolFromSmiles(smiles)
     idx_of_last_atom_on_main_chain = get_idx_of_element_on_main_chain(smiles, mol.GetNumAtoms())
     mol = Chem.AddHs(mol)
@@ -249,6 +249,10 @@ def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str, initial_
     mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
     mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
 
+    if initial_coords is not None:
+        dist_to_coord = initial_coords - mol1_coords[0] # subtract the first atom's coords
+        mol1_coords = mol1_coords + dist_to_coord
+
     new_atomic_nums, new_coords, last_non_hydrogen_idx_on_main_chain = position_mol2_on_bonding_site(mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
 
     atomic_nums = None
@@ -260,9 +264,6 @@ def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str, initial_
         atomic_nums = np.concatenate((old_atomic_nums, new_atomic_nums))
         coords = np.concatenate((coords_log[-1], new_coords))
 
-    if initial_coords is not None:
-        dist_to_coord = initial_coords - coords[0] # subtract the first atom's coords
-        coords = coords + dist_to_coord
 
     coords_log = relax(sevennet_0_cal, atomic_nums, coords, max_steps=5)
     return atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain
