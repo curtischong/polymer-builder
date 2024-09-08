@@ -20,6 +20,12 @@ for i in range(num_monomers - 2): # -2 since we already have the first 2 monomer
         "relax_len": len(coords_log),
     })
 
+coords_log = coords_log + get_molecules.relax(sevennet_0_cal, relax_batches[-1]["atomic_nums"], coords_log[-1], max_steps=50)
+relax_batches.append({
+    "atomic_nums": relax_batches[-1]["atomic_nums"],
+    "relax_len": len(coords_log),
+})
+
 relaxation = {
     "frames": []
 }
