@@ -267,6 +267,8 @@ def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str, initial_
 
 
     coords_log = relax(sevennet_0_cal, atomic_nums, coords, max_steps=5)
+    if old_coords_log is not None:
+        coords_log = old_coords_log + coords_log
     return atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain
 
 # grows the new smiles onto the end of chain1

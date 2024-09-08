@@ -77,25 +77,25 @@ def create_bulk_polymer():
             "last_non_hydrogen_idx_on_main_chain": last_non_hydrogen_idx_on_main_chain,
         })
 
-    # num_monomers = 5
-    # for _ in range(num_monomers - 2): # -2 since we already have the first 2 monomers
-    #     batches_to_grow = relax_batches[-num_chains:len(relax_batches)]
-    #     for chain in batches_to_grow:
-    #         last_non_hydrogen_idx_on_main_chain = chain["last_non_hydrogen_idx_on_main_chain"]
-    #         atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain = get_molecules.grow_on_chain(sevennet_0_cal, atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain, smiles)
-    #         relax_batches.append({
-    #             "atomic_nums": atomic_nums.tolist(),
-    #             "relax_len": len(coords_log),
-    #             "last_non_hydrogen_idx_on_main_chain": last_non_hydrogen_idx_on_main_chain,
-    #         })
+    num_monomers = 5
+    for _ in range(num_monomers - 2): # -2 since we already have the first 2 monomers
+        batches_to_grow = relax_batches[-num_chains:len(relax_batches)]
+        for chain in batches_to_grow:
+            last_non_hydrogen_idx_on_main_chain = chain["last_non_hydrogen_idx_on_main_chain"]
+            atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain = get_molecules.grow_on_chain(sevennet_0_cal, atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain, smiles)
+            relax_batches.append({
+                "atomic_nums": atomic_nums.tolist(),
+                "relax_len": len(coords_log),
+                "last_non_hydrogen_idx_on_main_chain": last_non_hydrogen_idx_on_main_chain,
+            })
 
-    # # final relaxation
-    # print("running final relaxation")
-    # coords_log = coords_log + get_molecules.relax(sevennet_0_cal, relax_batches[-1]["atomic_nums"], coords_log[-1], max_steps=50)
-    # relax_batches.append({
-    #     "atomic_nums": relax_batches[-1]["atomic_nums"],
-    #     "relax_len": len(coords_log),
-    # })
+    # final relaxation
+    print("running final relaxation")
+    coords_log = coords_log + get_molecules.relax(sevennet_0_cal, relax_batches[-1]["atomic_nums"], coords_log[-1], max_steps=50)
+    relax_batches.append({
+        "atomic_nums": relax_batches[-1]["atomic_nums"],
+        "relax_len": len(coords_log),
+    })
 
     relaxation = {
         "frames": []
