@@ -197,7 +197,7 @@ class LoggingFIRE(FIRE):
         self.steps_taken += 1
 
 
-def relax(sevennet_0_cal: SevenNetCalculator, atomic_nums: np.ndarray, coords: np.ndarray):
+def relax(sevennet_0_cal: SevenNetCalculator, atomic_nums: np.ndarray, coords: np.ndarray) -> list[np.ndarray]:
 
     # properties = ["energy", "forces", "stress"]
 
