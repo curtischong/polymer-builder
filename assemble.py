@@ -12,7 +12,7 @@ relax_batches = [{
     "relax_len": len(coords_log),
 }]
 
-num_monomers = 3
+num_monomers = 5
 for i in range(num_monomers - 2): # -2 since we already have the first 2 monomers
     atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain = get_molecules.grow_on_chain(sevennet_0_cal, relax_batches[-1]["atomic_nums"], coords_log, last_non_hydrogen_idx_on_main_chain, smiles)
     relax_batches.append({
@@ -29,10 +29,10 @@ for relax_batch in relax_batches:
     atomic_nums = relax_batch["atomic_nums"]
     relax_len = relax_batch["relax_len"]
     while curr_idx < relax_len:
-        coord = coords_log[curr_idx]
+        coords = coords_log[curr_idx]
         relaxation["frames"].append({
             "atomic_nums": atomic_nums,
-            "coords": coord.tolist(),
+            "coords": coords.tolist(),
         })
         curr_idx += 1
 json.dump(relaxation, open("relaxation.json", "w"), separators=(',', ':'))

@@ -263,5 +263,5 @@ def grow_on_chain(sevennet_0_cal: SevenNetCalculator, atomic_nums1: np.ndarray, 
     coords1 = coords_log[-1]
 
     atomic_nums, coords, last_non_hydrogen_idx_on_main_chain = position_mol2_on_bonding_site(atomic_nums1, coords1, last_non_hydrogen_idx_on_main_chain1, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
-    coords_log = relax(sevennet_0_cal, atomic_nums, coords)
-    return atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain
+    new_coords_log = coords_log + relax(sevennet_0_cal, atomic_nums, coords)
+    return atomic_nums, new_coords_log, last_non_hydrogen_idx_on_main_chain
