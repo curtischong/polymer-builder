@@ -244,11 +244,16 @@ def position_mol2_on_bonding_site(mol1_atomic_nums: np.ndarray, mol1_coords: np.
     coords = np.concatenate((mol1_coords, mol2_coords))
     return atomic_nums, coords, len(mol1_coords) + mol2_last_non_hydrogen_idx_on_main_chain
 
-def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str):
+def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str, initial_coords: np.ndarray = None) -> tuple[np.ndarray, list[np.ndarray], int]:
     mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
     mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
 
     atomic_nums, coords, last_non_hydrogen_idx_on_main_chain = position_mol2_on_bonding_site(mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
+
+    if initial_coords is not None:
+        dist_to_coord = initial_coords - coords[0] # subtract the first atom's coords
+        coords = coords + dist_to_coord
+
     coords_log = relax(sevennet_0_cal, atomic_nums, coords, max_steps=5)
     return atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain
 
