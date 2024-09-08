@@ -6,9 +6,8 @@ from ase.optimize import BFGS, FIRE, LBFGS, BFGSLineSearch
 from sevenn_runner import SevenNetCalculator
 import time
 import json
-import sys
 
-max_steps = 300
+max_steps = 50
 import gc
 
 
@@ -116,7 +115,7 @@ def get_molecules(smiles: str):
     atomic_nums = np.array(atomic_nums)
     rotated_coords = rotate_coordinates_3d(coords, r)
 
-    return atomic_nums, rotated_coords
+    return atomic_nums, rotated_coords, idx_of_last_atom
 
 
 def to_ase_atoms(atomic_nums: np.ndarray, coords: np.ndarray):
@@ -134,7 +133,7 @@ def to_ase_atoms(atomic_nums: np.ndarray, coords: np.ndarray):
     )
     return atoms
 
-class LoggingBFGS(BFGSLineSearch):
+class LoggingBFGS(BFGS):
     def __init__(self, atoms, logfile=None, trajectory=None, coords_log=[]):
         super().__init__(atoms, logfile, trajectory)
         self.coords_log = coords_log
@@ -151,8 +150,8 @@ class LoggingBFGS(BFGSLineSearch):
     def step(self, f=None):
         if self.steps_taken >= max_steps:
             return
-        if self.steps_taken % 10 == 0:
-            gc.collect()
+        # if self.steps_taken % 10 == 0:
+        #     gc.collect()
             # Clear Python's internal freelists
             # gc.collect()
             # gc.collect()
@@ -201,37 +200,41 @@ def relax(atomic_nums: np.ndarray, coords: np.ndarray):
     coords_log = []
     start = time.time()
     dyn = LoggingBFGS(system, coords_log=coords_log)
+    # dyn = BFGS(system)
     # dyn = LoggingFIRE(system, coords_log=coords_log)
     # dyn = LBFGS(system) 
     # dyn = FIRE(system)
     while not dyn.steps_taken >= max_steps:
-        dyn.run(steps=1)
+        dyn.run(steps=1, fmax=0.0001)
     end = time.time()
     print("relax time: ", end - start)
 
     return coords_log
 
-
 def grow_two_molecules(smiles: str):
-    mol1_atomic_nums, mol1_coords = get_molecules(smiles)
-    mol2_atomic_nums, mol2_coords = get_molecules(smiles)
+    mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx = get_molecules(smiles)
+    mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx = get_molecules(smiles)
 
-    # remove the last hydrogen of the first molecule
-    mol1_atomic_nums = mol1_atomic_nums[:-1]
-    mol1_coords = mol1_coords[:-1]
-    # remove the first hydrogen of the first molecule
-    mol2_atomic_nums = mol2_atomic_nums[1:]
-    mol2_coords = mol2_coords[1:]
-
-    mol1_non_hydrogen_idx = last_non_hydrogen_idx(mol1_atomic_nums)
+    # mol1_non_hydrogen_idx = last_non_hydrogen_idx(mol1_atomic_nums)
+    mol1_non_hydrogen_idx = mol1_last_non_hydrogen_idx
     mol2_non_hydrogen_idx = 0
 
     # move mol2 right next to the last non-hydrogen atom of mol1
     amount_to_move = mol1_coords[mol1_non_hydrogen_idx] - mol2_coords[mol2_non_hydrogen_idx]
 
+    buffer = np.array([3, 3, 3])
     # translate the second molecule to the furthest point of the first molecule
     for i in range(len(mol2_coords)):
-        mol2_coords = mol2_coords + amount_to_move
+        mol2_coords = mol2_coords + amount_to_move + buffer
+
+    print(mol1_coords[-1])
+    print(mol2_coords[mol2_last_non_hydrogen_idx+1])
+    # remove the last hydrogen of the first molecule
+    mol1_atomic_nums = mol1_atomic_nums[:-1]
+    mol1_coords = mol1_coords[:-1]
+    # remove the first hydrogen of the first molecule
+    mol2_atomic_nums = np.delete(mol2_atomic_nums, mol2_last_non_hydrogen_idx +1, axis=0)
+    mol2_coords = np.delete(mol2_coords, mol2_last_non_hydrogen_idx+1, axis=0)
 
     # now we have two molecules near each other. run md to get them to attach
 
