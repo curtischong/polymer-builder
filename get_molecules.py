@@ -197,8 +197,7 @@ class LoggingFIRE(FIRE):
         self.steps_taken += 1
 
 
-def relax(atomic_nums: np.ndarray, coords: np.ndarray):
-    sevennet_0_cal = SevenNetCalculator("7net-0", device="auto")  # 7net-0, SevenNet-0, 7net-0_22May2024, 7net-0_11July2024 ...
+def relax(sevennet_0_cal: SevenNetCalculator, atomic_nums: np.ndarray, coords: np.ndarray):
 
     # properties = ["energy", "forces", "stress"]
 
@@ -250,19 +249,19 @@ def position_mol2_on_bonding_site(mol1_atomic_nums: np.ndarray, mol1_coords: np.
     coords = np.concatenate((mol1_coords, mol2_coords))
     return atomic_nums, coords, len(mol1_coords) + mol2_last_non_hydrogen_idx_on_main_chain
 
-def grow_two_molecules(smiles: str):
+def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str):
     mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
     mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
 
     atomic_nums, coords, last_non_hydrogen_idx_on_main_chain = position_mol2_on_bonding_site(mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
-    coords_log = relax(atomic_nums, coords)
+    coords_log = relax(sevennet_0_cal, atomic_nums, coords)
     return atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain
 
 # grows the new smiles onto the end of chain1
-def grow_on_chain(atomic_nums1: np.ndarray, coords_log: list[np.ndarray], last_non_hydrogen_idx_on_main_chain1:int, smiles: str):
+def grow_on_chain(sevennet_0_cal: SevenNetCalculator, atomic_nums1: np.ndarray, coords_log: list[np.ndarray], last_non_hydrogen_idx_on_main_chain1:int, smiles: str):
     mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
     coords1 = coords_log[-1]
 
     atomic_nums, coords, last_non_hydrogen_idx_on_main_chain = position_mol2_on_bonding_site(atomic_nums1, coords1, last_non_hydrogen_idx_on_main_chain1, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
-    coords_log = relax(atomic_nums, coords)
+    coords_log = relax(sevennet_0_cal, atomic_nums, coords)
     return atomic_nums.tolist(), coords_log, last_non_hydrogen_idx_on_main_chain
