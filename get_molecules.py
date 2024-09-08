@@ -201,7 +201,6 @@ def relax(sevennet_0_cal: SevenNetCalculator, atomic_nums: np.ndarray, coords: n
     system = to_ase_atoms(atomic_nums=atomic_nums, coords=coords)
 
     # create the calculator
-    print(sevennet_0_cal.device)
     system.calc = sevennet_0_cal
 
     # dyn = BFGS(system)

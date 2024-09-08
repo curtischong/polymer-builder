@@ -4,6 +4,7 @@ from sevenn_runner import SevenNetCalculator
 
 
 sevennet_0_cal = SevenNetCalculator("7net-0", device="auto")  # 7net-0, SevenNet-0, 7net-0_22May2024, 7net-0_11July2024 ...
+print(f"running on device {sevennet_0_cal.device}")
 smiles="NCC(=O)NCCCCCC(=O)"
 atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain = get_molecules.grow_two_molecules(sevennet_0_cal, smiles)
 
