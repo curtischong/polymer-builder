@@ -222,12 +222,10 @@ def relax(atomic_nums: np.ndarray, coords: np.ndarray):
     end = time.time()
     print("relax time: ", end - start)
 
-    return coords_log
+    return np.array(coords_log)
 
-def grow_two_molecules(smiles: str):
-    mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
-    mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
 
+def position_mol2_on_bonding_site(mol1_atomic_nums: np.ndarray, mol1_coords: np.ndarray, mol1_last_non_hydrogen_idx_on_main_chain: int,  mol2_atomic_nums: np.ndarray, mol2_coords: np.ndarray, mol2_last_non_hydrogen_idx_on_main_chain: int):
     mol1_non_hydrogen_idx = mol1_last_non_hydrogen_idx_on_main_chain
     mol2_non_hydrogen_idx = 0
 
@@ -250,11 +248,20 @@ def grow_two_molecules(smiles: str):
 
     atomic_nums = np.concatenate((mol1_atomic_nums, mol2_atomic_nums))
     coords = np.concatenate((mol1_coords, mol2_coords))
+    return atomic_nums, coords
 
+def grow_two_molecules(smiles: str):
+    mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
+    mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
+
+    atomic_nums, coords = position_mol2_on_bonding_site(mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
     coords_log = relax(atomic_nums, coords)
+    return atomic_nums, coords_log
 
-    relaxation = {
-        "atomic_nums": atomic_nums.tolist(),
-        "coords": coords_log,
-    }
-    json.dump(relaxation, open("relaxation.json", "w"))
+# grows the new smiles onto the end of chain1
+def grow_on_chain(atomic_nums1: np.ndarray, coords1: np.ndarray, last_non_hydrogen_idx_on_main_chain1:int, smiles: str):
+    mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
+
+    atomic_nums, coords = position_mol2_on_bonding_site(atomic_nums1, coords1, last_non_hydrogen_idx_on_main_chain1, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
+    coords_log = relax(atomic_nums, coords)
+    return atomic_nums.tolist(), coords_log
