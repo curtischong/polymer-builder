@@ -2,12 +2,18 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 import numpy as np
 from ase import Atoms
-from ase.optimize import BFGS, FIRE
+from ase.optimize import BFGS, FIRE, LBFGS, BFGSLineSearch
 from sevenn_runner import SevenNetCalculator
 import time
 import json
+import sys
 
 max_steps = 300
+import gc
+
+
+def last_non_hydrogen_idx(atomic_nums: np.ndarray):
+    return np.argmax(atomic_nums != 1)
 
 # NOTE: this will work poortly for hydrogenated molecules
 def calculate_displacement_vector(conf, idx_of_last_atom: int):
@@ -128,7 +134,7 @@ def to_ase_atoms(atomic_nums: np.ndarray, coords: np.ndarray):
     )
     return atoms
 
-class LoggingBFGS(BFGS):
+class LoggingBFGS(BFGSLineSearch):
     def __init__(self, atoms, logfile=None, trajectory=None, coords_log=[]):
         super().__init__(atoms, logfile, trajectory)
         self.coords_log = coords_log
@@ -145,6 +151,15 @@ class LoggingBFGS(BFGS):
     def step(self, f=None):
         if self.steps_taken >= max_steps:
             return
+        if self.steps_taken % 10 == 0:
+            gc.collect()
+            # Clear Python's internal freelists
+            # gc.collect()
+            # gc.collect()
+
+            # Clear Python's module cache
+            # sys.modules.clear()
+
         super().step(f)
         self.steps_taken += 1
 
@@ -185,8 +200,9 @@ def relax(atomic_nums: np.ndarray, coords: np.ndarray):
     # dyn = BFGS(system)
     coords_log = []
     start = time.time()
-    # dyn = LoggingBFGS(system, coords_log=coords_log)
-    dyn = LoggingFIRE(system, coords_log=coords_log)
+    dyn = LoggingBFGS(system, coords_log=coords_log)
+    # dyn = LoggingFIRE(system, coords_log=coords_log)
+    # dyn = LBFGS(system) 
     # dyn = FIRE(system)
     while not dyn.steps_taken >= max_steps:
         dyn.run(steps=1)
@@ -207,12 +223,15 @@ def grow_two_molecules(smiles: str):
     mol2_atomic_nums = mol2_atomic_nums[1:]
     mol2_coords = mol2_coords[1:]
 
-    furthest_point_of_mol1 = np.max(mol1_coords, axis=0)
+    mol1_non_hydrogen_idx = last_non_hydrogen_idx(mol1_atomic_nums)
+    mol2_non_hydrogen_idx = 0
 
-    buffer = 0
+    # move mol2 right next to the last non-hydrogen atom of mol1
+    amount_to_move = mol1_coords[mol1_non_hydrogen_idx] - mol2_coords[mol2_non_hydrogen_idx]
+
     # translate the second molecule to the furthest point of the first molecule
     for i in range(len(mol2_coords)):
-        mol2_coords[i] = mol2_coords[i] + furthest_point_of_mol1 + buffer
+        mol2_coords = mol2_coords + amount_to_move
 
     # now we have two molecules near each other. run md to get them to attach
 

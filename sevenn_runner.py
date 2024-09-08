@@ -129,7 +129,7 @@ class SevenNetCalculator(Calculator):
             [self.type_map[z.item()] for z in data[KEY.NODE_FEATURE]]
         )
         # print("self.device: ", self.device)
-        start = time.time()
+        # start = time.time()
         data.to(self.device)
 
         if isinstance(self.model, torch_script_type):
@@ -137,8 +137,8 @@ class SevenNetCalculator(Calculator):
             del data['data_info']
 
         output = self.model(data)
-        end = time.time()
-        print("calculator time: ", end - start)
+        # end = time.time()
+        # print("calculator time: ", end - start)
         energy = output[KEY.PRED_TOTAL_ENERGY].detach().cpu().item()
         # Store results
         self.results = {
