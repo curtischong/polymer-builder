@@ -2,9 +2,9 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 import numpy as np
 from ase import Atoms
-from ase.optimize import BFGS
-import sevenn_runner
-from sevenn.sevennet_calculator import SevenNetCalculator
+from ase.optimize import BFGS, FIRE
+from sevenn_runner import SevenNetCalculator
+import time
 
 max_steps = 2
 
@@ -114,23 +114,44 @@ def get_molecules(smiles: str):
 
 def to_ase_atoms(atomic_nums: np.ndarray, coords: np.ndarray):
     lattice_matrix = np.array([
-        [-1000, 1000, 1000],
-        [1000, -1000, 1000],
-        [1000, 1000, -1000]
+        [1000, 0, 0],
+        [0, 1000, 0],
+        [0, 0, 1000]
     ])
     atoms = Atoms(
         numbers=atomic_nums,
         positions=coords,
         cell=lattice_matrix,
-        pbc=(False, False, False),
+        pbc=(True, True, True),
     )
     return atoms
 
-class LoggingBFGS(BFGS):
-    def __init__(self, atoms, logfile=None, trajectory=None, coords_log=[]):
-        super().__init__(atoms, logfile, trajectory)
+# class LoggingBFGS(BFGS):
+#     def __init__(self, atoms, logfile=None, trajectory=None, coords_log=[]):
+#         super().__init__(atoms, logfile, trajectory)
+#         self.coords_log = coords_log
+#         self.steps_taken = 0
+
+#     def log(self):
+#         super().log()
+#         print("step: ", len(self.coords_log))
+#         # Log the fractional positions at each step
+#         self.coords_log.append(
+#             self.atoms.get_positions().copy().tolist()
+#         )
+
+#     def step(self, f=None):
+#         if self.steps_taken >= max_steps:
+#             return
+#         super().step(f)
+#         self.steps_taken += 1
+
+class LoggingFIRE(FIRE):
+    def __init__(self, atoms, logfile=None, trajectory=None, coords_log=[], max_steps=None):
+        super().__init__(atoms, logfile=logfile, trajectory=trajectory)
         self.coords_log = coords_log
         self.steps_taken = 0
+        self.max_steps = max_steps
 
     def log(self):
         super().log()
@@ -141,28 +162,34 @@ class LoggingBFGS(BFGS):
         )
 
     def step(self, f=None):
-        if self.steps_taken >= max_steps:
+        if self.max_steps is not None and self.steps_taken >= self.max_steps:
             return
         super().step(f)
         self.steps_taken += 1
 
 
 def relax(atomic_nums: np.ndarray, coords: np.ndarray):
-    sevennet_0_cal = SevenNetCalculator("7net-0")  # 7net-0, SevenNet-0, 7net-0_22May2024, 7net-0_11July2024 ...
+    sevennet_0_cal = SevenNetCalculator("7net-0", device="cpu")  # 7net-0, SevenNet-0, 7net-0_22May2024, 7net-0_11July2024 ...
 
-    properties = ["energy", "forces", "stress"]
+    # properties = ["energy", "forces", "stress"]
 
     # set initial positions
     system = to_ase_atoms(atomic_nums=atomic_nums, coords=coords)
 
     # create the calculator
+    print(sevennet_0_cal.device)
     system.calc = sevennet_0_cal
 
     # dyn = BFGS(system)
     coords_log = []
-    dyn = LoggingBFGS(system, coords_log=coords_log)
-    while not dyn.steps_taken >= max_steps:
-        dyn.run(steps=1)
+    start = time.time()
+    # dyn = LoggingBFGS(system, coords_log=coords_log)
+    # dyn = LoggingFIRE(system, coords_log=coords_log)
+    dyn = FIRE(system)
+    # while not dyn.steps_taken >= max_steps:
+    dyn.run(steps=1)
+    end = time.time()
+    print("relax time: ", end - start)
 
     return coords_log
 
