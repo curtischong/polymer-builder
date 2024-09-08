@@ -157,7 +157,7 @@ class LoggingBFGS(BFGS):
         print("step: ", len(self.coords_log))
         # Log the fractional positions at each step
         self.coords_log.append(
-            self.atoms.get_positions().copy().tolist()
+            self.atoms.get_positions().copy()
         )
 
     def step(self, f=None):
@@ -222,7 +222,7 @@ def relax(atomic_nums: np.ndarray, coords: np.ndarray):
     end = time.time()
     print("relax time: ", end - start)
 
-    return np.array(coords_log)
+    return coords_log
 
 
 def position_mol2_on_bonding_site(mol1_atomic_nums: np.ndarray, mol1_coords: np.ndarray, mol1_last_non_hydrogen_idx_on_main_chain: int,  mol2_atomic_nums: np.ndarray, mol2_coords: np.ndarray, mol2_last_non_hydrogen_idx_on_main_chain: int):
@@ -248,20 +248,21 @@ def position_mol2_on_bonding_site(mol1_atomic_nums: np.ndarray, mol1_coords: np.
 
     atomic_nums = np.concatenate((mol1_atomic_nums, mol2_atomic_nums))
     coords = np.concatenate((mol1_coords, mol2_coords))
-    return atomic_nums, coords
+    return atomic_nums, coords, len(mol1_coords) + mol2_last_non_hydrogen_idx_on_main_chain
 
 def grow_two_molecules(smiles: str):
     mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
     mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
 
-    atomic_nums, coords = position_mol2_on_bonding_site(mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
+    atomic_nums, coords, last_non_hydrogen_idx_on_main_chain = position_mol2_on_bonding_site(mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
     coords_log = relax(atomic_nums, coords)
-    return atomic_nums, coords_log
+    return atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain
 
 # grows the new smiles onto the end of chain1
-def grow_on_chain(atomic_nums1: np.ndarray, coords1: np.ndarray, last_non_hydrogen_idx_on_main_chain1:int, smiles: str):
+def grow_on_chain(atomic_nums1: np.ndarray, coords_log: list[np.ndarray], last_non_hydrogen_idx_on_main_chain1:int, smiles: str):
     mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
+    coords1 = coords_log[-1]
 
-    atomic_nums, coords = position_mol2_on_bonding_site(atomic_nums1, coords1, last_non_hydrogen_idx_on_main_chain1, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
+    atomic_nums, coords, last_non_hydrogen_idx_on_main_chain = position_mol2_on_bonding_site(atomic_nums1, coords1, last_non_hydrogen_idx_on_main_chain1, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
     coords_log = relax(atomic_nums, coords)
-    return atomic_nums.tolist(), coords_log
+    return atomic_nums.tolist(), coords_log, last_non_hydrogen_idx_on_main_chain
