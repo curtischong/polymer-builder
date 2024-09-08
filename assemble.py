@@ -28,7 +28,7 @@ curr_idx = 0
 for relax_batch in relax_batches:
     atomic_nums = relax_batch["atomic_nums"]
     relax_len = relax_batch["relax_len"]
-    for i in range(relax_len):
+    while curr_idx < relax_len:
         coord = coords_log[curr_idx]
         relaxation["frames"].append({
             "atomic_nums": atomic_nums,

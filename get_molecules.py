@@ -154,7 +154,7 @@ class LoggingBFGS(BFGS):
 
     def log(self):
         super().log()
-        print("step: ", len(self.coords_log))
+        # print("step: ", len(self.coords_log))
         # Log the fractional positions at each step
         self.coords_log.append(
             self.atoms.get_positions().copy()
