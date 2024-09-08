@@ -184,7 +184,7 @@ class LoggingFIRE(FIRE):
 
     def log(self):
         super().log()
-        print("step: ", len(self.coords_log))
+        # print("step: ", len(self.coords_log))
         # Log the fractional positions at each step
         self.coords_log.append(
             self.atoms.get_positions().copy().tolist()
@@ -264,4 +264,4 @@ def grow_on_chain(sevennet_0_cal: SevenNetCalculator, atomic_nums1: np.ndarray, 
 
     atomic_nums, coords, last_non_hydrogen_idx_on_main_chain = position_mol2_on_bonding_site(atomic_nums1, coords1, last_non_hydrogen_idx_on_main_chain1, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
     coords_log = relax(sevennet_0_cal, atomic_nums, coords)
-    return atomic_nums.tolist(), coords_log, last_non_hydrogen_idx_on_main_chain
+    return atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain

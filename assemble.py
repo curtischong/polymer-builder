@@ -8,7 +8,7 @@ smiles="NCC(=O)NCCCCCC(=O)"
 atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain = get_molecules.grow_two_molecules(sevennet_0_cal, smiles)
 
 num_monomers = 5
-for i in range(num_monomers):
+for i in range(num_monomers - 1):
     atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain = get_molecules.grow_on_chain(sevennet_0_cal, atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain, smiles)
 
 relaxation = {
