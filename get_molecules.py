@@ -215,7 +215,7 @@ def grow_two_molecules(smiles: str):
     coords_log = relax(atomic_nums, coords)
 
     relaxation = {
-        "atomic_nums": atomic_nums,
+        "atomic_nums": atomic_nums.tolist(),
         "coords": coords_log,
     }
     json.dump(relaxation, open("relaxation.json", "w"))
