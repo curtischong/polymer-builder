@@ -5,6 +5,7 @@ from ase import Atoms
 from ase.optimize import BFGS, FIRE
 from sevenn_runner import SevenNetCalculator
 import time
+import json
 
 max_steps = 2
 
@@ -212,4 +213,9 @@ def grow_two_molecules(smiles: str):
     coords = np.concatenate((mol1_coords, mol2_coords))
 
     coords_log = relax(atomic_nums, coords)
-    print(coords_log)
+
+    relaxation = {
+        "atomic_nums": atomic_nums,
+        "coords": coords_log,
+    }
+    json.dump(relaxation, open("relaxation.json", "w"))
