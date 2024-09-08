@@ -118,17 +118,17 @@ class SevenNetCalculator(Calculator):
     def calculate(
         self, atoms=None, properties=None, system_changes=all_changes
     ):
-        start = time.time()
+        # start = time.time()
         # call parent class to set necessary atom attributes
         Calculator.calculate(self, atoms, properties, system_changes)
         data = sevenn.util.unlabeled_atoms_to_input(atoms, self.cutoff)
-        end = time.time()
-        print("setup time: ", end - start)
+        # end = time.time()
+        # print("setup time: ", end - start)
 
         data[KEY.NODE_FEATURE] = torch.LongTensor(
             [self.type_map[z.item()] for z in data[KEY.NODE_FEATURE]]
         )
-        print("self.device: ", self.device)
+        # print("self.device: ", self.device)
         start = time.time()
         data.to(self.device)
 

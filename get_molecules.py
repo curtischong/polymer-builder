@@ -7,7 +7,7 @@ from sevenn_runner import SevenNetCalculator
 import time
 import json
 
-max_steps = 2
+max_steps = 300
 
 # NOTE: this will work poortly for hydrogenated molecules
 def calculate_displacement_vector(conf, idx_of_last_atom: int):
@@ -185,8 +185,8 @@ def relax(atomic_nums: np.ndarray, coords: np.ndarray):
     # dyn = BFGS(system)
     coords_log = []
     start = time.time()
-    dyn = LoggingBFGS(system, coords_log=coords_log)
-    # dyn = LoggingFIRE(system, coords_log=coords_log)
+    # dyn = LoggingBFGS(system, coords_log=coords_log)
+    dyn = LoggingFIRE(system, coords_log=coords_log)
     # dyn = FIRE(system)
     while not dyn.steps_taken >= max_steps:
         dyn.run(steps=1)
@@ -200,9 +200,16 @@ def grow_two_molecules(smiles: str):
     mol1_atomic_nums, mol1_coords = get_molecules(smiles)
     mol2_atomic_nums, mol2_coords = get_molecules(smiles)
 
+    # remove the last hydrogen of the first molecule
+    mol1_atomic_nums = mol1_atomic_nums[:-1]
+    mol1_coords = mol1_coords[:-1]
+    # remove the first hydrogen of the first molecule
+    mol2_atomic_nums = mol2_atomic_nums[1:]
+    mol2_coords = mol2_coords[1:]
+
     furthest_point_of_mol1 = np.max(mol1_coords, axis=0)
 
-    buffer = 3
+    buffer = 0
     # translate the second molecule to the furthest point of the first molecule
     for i in range(len(mol2_coords)):
         mol2_coords[i] = mol2_coords[i] + furthest_point_of_mol1 + buffer
