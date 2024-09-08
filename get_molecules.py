@@ -249,6 +249,7 @@ def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str, initial_
     mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
     mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
 
+    # move mol1 coords to the initial coords
     if initial_coords is not None:
         dist_to_coord = initial_coords - mol1_coords[0] # subtract the first atom's coords
         mol1_coords = mol1_coords + dist_to_coord
@@ -269,7 +270,7 @@ def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str, initial_
     return atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain
 
 # grows the new smiles onto the end of chain1
-def grow_on_chain(sevennet_0_cal: SevenNetCalculator, atomic_nums1: np.ndarray, coords_log: list[np.ndarray], last_non_hydrogen_idx_on_main_chain1:int, smiles: str):
+def grow_on_chain(sevennet_0_cal: SevenNetCalculator, atomic_nums1: np.ndarray, coords_log:list[np.ndarray], last_non_hydrogen_idx_on_main_chain1:int, smiles: str):
     mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
     coords1 = coords_log[-1]
 
