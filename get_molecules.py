@@ -1,3 +1,4 @@
+from typing import Optional
 from rdkit import Chem
 from rdkit.Chem import AllChem
 import numpy as np
@@ -244,11 +245,20 @@ def position_mol2_on_bonding_site(mol1_atomic_nums: np.ndarray, mol1_coords: np.
     coords = np.concatenate((mol1_coords, mol2_coords))
     return atomic_nums, coords, len(mol1_coords) + mol2_last_non_hydrogen_idx_on_main_chain
 
-def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str, initial_coords: np.ndarray = None) -> tuple[np.ndarray, list[np.ndarray], int]:
+def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str, initial_coords: np.ndarray = None, old_atomic_nums:Optional[np.ndarray]=None, coords_log:Optional[list[np.ndarray]]=None) -> tuple[np.ndarray, list[np.ndarray], int]:
     mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
     mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
 
-    atomic_nums, coords, last_non_hydrogen_idx_on_main_chain = position_mol2_on_bonding_site(mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
+    new_atomic_nums, new_coords, last_non_hydrogen_idx_on_main_chain = position_mol2_on_bonding_site(mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
+
+    atomic_nums = None
+    coords = None
+    if old_atomic_nums is None:
+        atomic_nums = new_atomic_nums
+        coords = new_coords
+    else:
+        atomic_nums = np.concatenate((old_atomic_nums, new_atomic_nums))
+        coords = np.concatenate((coords_log[-1], new_coords))
 
     if initial_coords is not None:
         dist_to_coord = initial_coords - coords[0] # subtract the first atom's coords

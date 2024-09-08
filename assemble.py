@@ -65,12 +65,9 @@ def create_bulk_polymer():
     print(f"running on device {sevennet_0_cal.device}")
     smiles="NCC(=O)NCCCCCC(=O)"
     coords_log = None
+    atomic_nums = None
     for initial_coord in get_initial_coords(4):
-        atomic_nums, new_coords_log, last_non_hydrogen_idx_on_main_chain = get_molecules.grow_two_molecules(sevennet_0_cal, smiles, initial_coord)
-        if not coords_log:
-            coords_log = new_coords_log
-        else:
-            coords_log = coords_log + new_coords_log
+        atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain = get_molecules.grow_two_molecules(sevennet_0_cal, smiles, initial_coord, atomic_nums, coords_log)
 
         relax_batches = [{
             "atomic_nums": atomic_nums.tolist(),
@@ -86,6 +83,7 @@ def create_bulk_polymer():
             })
 
     # final relaxation
+    print("running final relaxation")
     coords_log = coords_log + get_molecules.relax(sevennet_0_cal, relax_batches[-1]["atomic_nums"], coords_log[-1], max_steps=100)
     relax_batches.append({
         "atomic_nums": relax_batches[-1]["atomic_nums"],
