@@ -222,13 +222,11 @@ def grow_two_molecules(smiles: str):
     # move mol2 right next to the last non-hydrogen atom of mol1
     amount_to_move = mol1_coords[mol1_non_hydrogen_idx] - mol2_coords[mol2_non_hydrogen_idx]
 
-    buffer = np.array([3, 3, 3])
+    buffer = np.array([1, 1, 1])
     # translate the second molecule to the furthest point of the first molecule
     for i in range(len(mol2_coords)):
-        mol2_coords = mol2_coords + amount_to_move + buffer
+        mol2_coords[i] = mol2_coords[i] + amount_to_move + buffer
 
-    print(mol1_coords[-1])
-    print(mol2_coords[mol2_last_non_hydrogen_idx+1])
     # remove the last hydrogen of the first molecule
     mol1_atomic_nums = mol1_atomic_nums[:-1]
     mol1_coords = mol1_coords[:-1]
