@@ -5,10 +5,8 @@ from ase import Atoms
 from ase.optimize import BFGS, FIRE, LBFGS, BFGSLineSearch
 from sevenn_runner import SevenNetCalculator
 import time
-import json
 from elements import symbols
 
-max_steps = 50
 import gc
 
 
@@ -154,16 +152,14 @@ class LoggingBFGS(BFGS):
 
     def log(self):
         super().log()
-        print("step: ", len(self.coords_log))
+        # print("step: ", len(self.coords_log))
         # Log the fractional positions at each step
         self.coords_log.append(
             self.atoms.get_positions().copy()
         )
 
     def step(self, f=None):
-        if self.steps_taken >= max_steps:
-            return
-        # if self.steps_taken % 10 == 0:
+        # if self.steps_taken 10 == 0:
         #     gc.collect()
             # Clear Python's internal freelists
             # gc.collect()
@@ -197,7 +193,7 @@ class LoggingFIRE(FIRE):
         self.steps_taken += 1
 
 
-def relax(sevennet_0_cal: SevenNetCalculator, atomic_nums: np.ndarray, coords: np.ndarray):
+def relax(sevennet_0_cal: SevenNetCalculator, atomic_nums: np.ndarray, coords: np.ndarray, max_steps: int) -> list[np.ndarray]:
 
     # properties = ["energy", "forces", "stress"]
 
@@ -205,7 +201,6 @@ def relax(sevennet_0_cal: SevenNetCalculator, atomic_nums: np.ndarray, coords: n
     system = to_ase_atoms(atomic_nums=atomic_nums, coords=coords)
 
     # create the calculator
-    print(sevennet_0_cal.device)
     system.calc = sevennet_0_cal
 
     # dyn = BFGS(system)
@@ -254,7 +249,7 @@ def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str):
     mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
 
     atomic_nums, coords, last_non_hydrogen_idx_on_main_chain = position_mol2_on_bonding_site(mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
-    coords_log = relax(sevennet_0_cal, atomic_nums, coords)
+    coords_log = relax(sevennet_0_cal, atomic_nums, coords, max_steps=5)
     return atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain
 
 # grows the new smiles onto the end of chain1
@@ -263,5 +258,5 @@ def grow_on_chain(sevennet_0_cal: SevenNetCalculator, atomic_nums1: np.ndarray, 
     coords1 = coords_log[-1]
 
     atomic_nums, coords, last_non_hydrogen_idx_on_main_chain = position_mol2_on_bonding_site(atomic_nums1, coords1, last_non_hydrogen_idx_on_main_chain1, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
-    coords_log = relax(sevennet_0_cal, atomic_nums, coords)
-    return atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain
+    new_coords_log = coords_log + relax(sevennet_0_cal, atomic_nums, coords, max_steps=5)
+    return atomic_nums, new_coords_log, last_non_hydrogen_idx_on_main_chain
