@@ -6,13 +6,26 @@ from ase.optimize import BFGS, FIRE, LBFGS, BFGSLineSearch
 from sevenn_runner import SevenNetCalculator
 import time
 import json
+from elements import symbols
 
 max_steps = 50
 import gc
 
 
-def last_non_hydrogen_idx(atomic_nums: np.ndarray):
-    return np.argmax(atomic_nums != 1)
+def get_idx_of_element_on_main_chain(smiles: str, num_main_atoms: int):
+    smiles = smiles + "|"
+    element_count = 0
+    num_sidechains = 0
+
+    for i in range(len(smiles) -2, -1, -1):
+        if smiles[i] in symbols or smiles[i:i+2] in symbols:
+            element_count += 1
+            if num_sidechains == 0:
+                return num_main_atoms - element_count
+        elif smiles[i] == ")":
+            num_sidechains += 1
+        elif smiles[i] == "(":
+            num_sidechains -= 1
 
 # NOTE: this will work poortly for hydrogenated molecules
 def calculate_displacement_vector(conf, idx_of_last_atom: int):
@@ -92,12 +105,12 @@ def rotate_coordinates_3d(coords, rotation_matrix):
 
 def get_molecules(smiles: str):
     mol = Chem.MolFromSmiles(smiles)
-    idx_of_last_atom = mol.GetNumAtoms() - 1
+    idx_of_last_atom_on_main_chain = get_idx_of_element_on_main_chain(smiles, mol.GetNumAtoms())
     mol = Chem.AddHs(mol)
     AllChem.EmbedMolecule(mol)
 
     # make the molecules face the positive z direction
-    direction = calculate_displacement_vector(mol.GetConformer(), idx_of_last_atom)
+    direction = calculate_displacement_vector(mol.GetConformer(), idx_of_last_atom_on_main_chain)
     r = rotation_matrix_to_z(direction)
 
     first_atom = mol.GetConformer().GetAtomPosition(0)
@@ -115,7 +128,7 @@ def get_molecules(smiles: str):
     atomic_nums = np.array(atomic_nums)
     rotated_coords = rotate_coordinates_3d(coords, r)
 
-    return atomic_nums, rotated_coords, idx_of_last_atom
+    return atomic_nums, rotated_coords, idx_of_last_atom_on_main_chain
 
 
 def to_ase_atoms(atomic_nums: np.ndarray, coords: np.ndarray):
@@ -212,17 +225,16 @@ def relax(atomic_nums: np.ndarray, coords: np.ndarray):
     return coords_log
 
 def grow_two_molecules(smiles: str):
-    mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx = get_molecules(smiles)
-    mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx = get_molecules(smiles)
+    mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
+    mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
 
-    # mol1_non_hydrogen_idx = last_non_hydrogen_idx(mol1_atomic_nums)
-    mol1_non_hydrogen_idx = mol1_last_non_hydrogen_idx
+    mol1_non_hydrogen_idx = mol1_last_non_hydrogen_idx_on_main_chain
     mol2_non_hydrogen_idx = 0
 
     # move mol2 right next to the last non-hydrogen atom of mol1
     amount_to_move = mol1_coords[mol1_non_hydrogen_idx] - mol2_coords[mol2_non_hydrogen_idx]
 
-    buffer = np.array([1, 1, 1])
+    buffer = np.array([0, 0, 1])
     # translate the second molecule to the furthest point of the first molecule
     for i in range(len(mol2_coords)):
         mol2_coords[i] = mol2_coords[i] + amount_to_move + buffer
@@ -231,8 +243,8 @@ def grow_two_molecules(smiles: str):
     mol1_atomic_nums = mol1_atomic_nums[:-1]
     mol1_coords = mol1_coords[:-1]
     # remove the first hydrogen of the first molecule
-    mol2_atomic_nums = np.delete(mol2_atomic_nums, mol2_last_non_hydrogen_idx +1, axis=0)
-    mol2_coords = np.delete(mol2_coords, mol2_last_non_hydrogen_idx+1, axis=0)
+    mol2_atomic_nums = np.delete(mol2_atomic_nums, mol2_last_non_hydrogen_idx_on_main_chain +1, axis=0)
+    mol2_coords = np.delete(mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain+1, axis=0)
 
     # now we have two molecules near each other. run md to get them to attach
 
