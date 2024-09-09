@@ -52,7 +52,7 @@ def get_initial_coords(num_polymers:int):
     assert cube_side_len %1 == 0, "Number of num_polymers must be a perfect square"
     initial_positions = []
 
-    distance_between_chains = 10
+    distance_between_chains = 4
     cube_side_len = int(cube_side_len)
     for i in range(cube_side_len):
         for j in range(cube_side_len):
