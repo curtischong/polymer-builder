@@ -1,3 +1,4 @@
+from typing import Optional
 from rdkit import Chem
 from rdkit.Chem import AllChem
 import numpy as np
@@ -91,7 +92,7 @@ def translate_molecule(mol, x=0, y=0, z=0):
     
     return mol
 
-def rotate_coordinates_3d(coords, rotation_matrix):
+def rotate_coordinates_3d(coords: np.ndarray, rotation_matrix: np.ndarray) -> np.ndarray:
     """
     Rotate an array of 3D coordinates using a given 3x3 rotation matrix.
     
@@ -101,7 +102,7 @@ def rotate_coordinates_3d(coords, rotation_matrix):
     """
     return np.dot(coords, rotation_matrix.T)
 
-def get_molecules(smiles: str):
+def get_molecules(smiles: str) -> tuple[np.ndarray, np.ndarray, int]:
     mol = Chem.MolFromSmiles(smiles)
     idx_of_last_atom_on_main_chain = get_idx_of_element_on_main_chain(smiles, mol.GetNumAtoms())
     mol = Chem.AddHs(mol)
@@ -219,7 +220,7 @@ def relax(sevennet_0_cal: SevenNetCalculator, atomic_nums: np.ndarray, coords: n
     return coords_log
 
 
-def position_mol2_on_bonding_site(mol1_atomic_nums: np.ndarray, mol1_coords: np.ndarray, mol1_last_non_hydrogen_idx_on_main_chain: int,  mol2_atomic_nums: np.ndarray, mol2_coords: np.ndarray, mol2_last_non_hydrogen_idx_on_main_chain: int):
+def position_mol2_on_bonding_site(mol1_atomic_nums: np.ndarray, mol1_coords: np.ndarray, mol1_last_non_hydrogen_idx_on_main_chain: int, mol2_atomic_nums: np.ndarray, mol2_coords: np.ndarray, mol2_last_non_hydrogen_idx_on_main_chain: int):
     mol1_non_hydrogen_idx = mol1_last_non_hydrogen_idx_on_main_chain
     mol2_non_hydrogen_idx = 0
 
@@ -244,16 +245,35 @@ def position_mol2_on_bonding_site(mol1_atomic_nums: np.ndarray, mol1_coords: np.
     coords = np.concatenate((mol1_coords, mol2_coords))
     return atomic_nums, coords, len(mol1_coords) + mol2_last_non_hydrogen_idx_on_main_chain
 
-def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str):
+def grow_two_molecules(sevennet_0_cal: SevenNetCalculator, smiles: str, initial_coords: np.ndarray = None, old_atomic_nums:Optional[np.ndarray]=None, old_coords_log:Optional[list[np.ndarray]]=None) -> tuple[np.ndarray, list[np.ndarray], int]:
     mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
     mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
 
-    atomic_nums, coords, last_non_hydrogen_idx_on_main_chain = position_mol2_on_bonding_site(mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
+    # move mol1 coords to the initial coords
+    if initial_coords is not None:
+        dist_to_coord = initial_coords - mol1_coords[0] # subtract the first atom's coords
+        mol1_coords = mol1_coords + dist_to_coord
+
+    new_atomic_nums, new_coords, last_non_hydrogen_idx_on_main_chain = position_mol2_on_bonding_site(mol1_atomic_nums, mol1_coords, mol1_last_non_hydrogen_idx_on_main_chain, mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain)
+
+    atomic_nums = None
+    coords = None
+    if old_atomic_nums is None and old_coords_log is None:
+        atomic_nums = new_atomic_nums
+        coords = new_coords
+    else:
+        atomic_nums = np.concatenate((old_atomic_nums, new_atomic_nums))
+        coords = np.concatenate((old_coords_log[-1], new_coords))
+
+
     coords_log = relax(sevennet_0_cal, atomic_nums, coords, max_steps=5)
+    if old_coords_log is not None:
+        coords_log = old_coords_log + coords_log
+        last_non_hydrogen_idx_on_main_chain = old_coords_log[-1].shape[0] + last_non_hydrogen_idx_on_main_chain
     return atomic_nums, coords_log, last_non_hydrogen_idx_on_main_chain
 
 # grows the new smiles onto the end of chain1
-def grow_on_chain(sevennet_0_cal: SevenNetCalculator, atomic_nums1: np.ndarray, coords_log: list[np.ndarray], last_non_hydrogen_idx_on_main_chain1:int, smiles: str):
+def grow_on_chain(sevennet_0_cal: SevenNetCalculator, atomic_nums1: np.ndarray, coords_log:list[np.ndarray], last_non_hydrogen_idx_on_main_chain1:int, smiles: str):
     mol2_atomic_nums, mol2_coords, mol2_last_non_hydrogen_idx_on_main_chain = get_molecules(smiles)
     coords1 = coords_log[-1]
 
