@@ -52,7 +52,7 @@ def get_initial_coords(num_polymers:int):
     assert cube_side_len %1 == 0, "Number of num_polymers must be a perfect square"
     initial_positions = []
 
-    distance_between_chains = 4
+    distance_between_chains = 7
     cube_side_len = int(cube_side_len)
     for i in range(cube_side_len):
         for j in range(cube_side_len):
@@ -77,7 +77,7 @@ def create_bulk_polymer():
             "last_non_hydrogen_idx_on_main_chain": last_non_hydrogen_idx_on_main_chain,
         })
 
-    num_monomers = 5
+    num_monomers = 3
     for _ in range(num_monomers - 2): # -2 since we already have the first 2 monomers
         batches_to_grow = relax_batches[-num_chains:len(relax_batches)]
         for chain in batches_to_grow:
