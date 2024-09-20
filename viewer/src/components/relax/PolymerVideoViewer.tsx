@@ -246,7 +246,7 @@ const PolymerVideoViewerCanvas = ({
     return (
         <>
             <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
-            <div className="flex flex-row">
+            <div className="flex flex-row mt-2">
                 <Checkbox
                     checked={isUseFrameSliderCheckedRef.current}
                     onChange={(event) =>
