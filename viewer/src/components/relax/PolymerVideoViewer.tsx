@@ -108,9 +108,28 @@ const PolymerVideoViewerCanvas = ({
     // Animation loop
     const animate = useCallback(() => {
         const drawFrame = (processedFrame: ProcessedFrame) => {
+            // Remove existing spheres from the scene
+            // from https://stackoverflow.com/questions/18357529/threejs-remove-object-from-scene
             for (const sphere of currentSpheresRef.current) {
-                sceneRef.current.remove(sphere);
+                // Dispose geometry
+                if (sphere.geometry) {
+                    sphere.geometry.dispose();
+                }
+
+                // Dispose material
+                if (sphere.material) {
+                    if (Array.isArray(sphere.material)) {
+                        sphere.material.forEach(material => material.dispose());
+                    } else {
+                        sphere.material.dispose();
+                    }
+                }
+                sphere.removeFromParent();
             }
+
+            // Clear the currentSpheresRef
+            currentSpheresRef.current = [];
+
             // draw the atoms
             const numAtoms = processedFrame.atomicNumbers.length;
             for (let i = 0; i < numAtoms; i++) {
