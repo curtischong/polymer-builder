@@ -6,8 +6,8 @@ Note: the "stretching" in the video is NOT realistic. I built it so ppl can crit
 
 The reason why we are using neural network potentials is to ensure that the bonds between monomers are as realistic as possible.Trying to create your own random angles between monomer chains was pretty painful and it could lead to error. Moreover, using a neural network potential allows different polymer chains to "repel each other properly" whereas a more computationally expensive approach (e.g. ensure that no two chains are within a radius of 10 angstroms of each other) would be too expensive (and easy to write bugs).
 
-The reason why I'm building each monomer and then attaching them onto the chain individuall is because:
-- In real life, polymers are built by attraching monomers.
+The reason why I'm building each monomer and then attaching them onto the chain individually is because:
+- In real life, polymers are built by attracting monomers.
 - if you attach each atom one by one, you run into issues. e.g. if there is a cycle in the monomer, there is no sequence of atoms that you can attach "one after another" because it needs to loop back onto itself to complete the chain. so it's just simpler to create each monomer individually (using RDKit), then attach them together.
 
 Note: the polymers grow in the +z direction.
