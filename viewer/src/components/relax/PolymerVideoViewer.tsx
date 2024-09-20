@@ -108,9 +108,28 @@ const PolymerVideoViewerCanvas = ({
     // Animation loop
     const animate = useCallback(() => {
         const drawFrame = (processedFrame: ProcessedFrame) => {
+            // Remove existing spheres from the scene
+            // from https://stackoverflow.com/questions/18357529/threejs-remove-object-from-scene
             for (const sphere of currentSpheresRef.current) {
-                sceneRef.current.remove(sphere);
+                // Dispose geometry
+                if (sphere.geometry) {
+                    sphere.geometry.dispose();
+                }
+
+                // Dispose material
+                if (sphere.material) {
+                    if (Array.isArray(sphere.material)) {
+                        sphere.material.forEach(material => material.dispose());
+                    } else {
+                        sphere.material.dispose();
+                    }
+                }
+                sphere.removeFromParent();
             }
+
+            // Clear the currentSpheresRef
+            currentSpheresRef.current = [];
+
             // draw the atoms
             const numAtoms = processedFrame.atomicNumbers.length;
             for (let i = 0; i < numAtoms; i++) {
@@ -203,7 +222,8 @@ const PolymerVideoViewerCanvas = ({
         scene.add(ambientLight);
 
         // Camera position
-        camera.position.z = 300;
+        camera.position.x = -300;
+        camera.position.y = 0;
 
         // OrbitControls for interactivity
         const controls = new OrbitControls(camera, renderer.domElement);
@@ -226,7 +246,7 @@ const PolymerVideoViewerCanvas = ({
     return (
         <>
             <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
-            <div className="flex flex-row">
+            <div className="flex flex-row mt-2">
                 <Checkbox
                     checked={isUseFrameSliderCheckedRef.current}
                     onChange={(event) =>
